@@ -961,8 +961,19 @@ function App() {
               </button>
 
               <button
-                onClick={() => setIsAddExpenseOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-slate-800"
+                onClick={() => {
+                  if (members.length === 0) {
+                    alert("Tambahkan member dulu sebelum membuat expense.");
+                    return;
+                  }
+
+                  setIsAddExpenseOpen(true);
+                }}
+                className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold shadow-lg transition ${
+                  members.length === 0
+                    ? "cursor-not-allowed bg-slate-300 text-slate-500 shadow-none"
+                    : "bg-slate-950 text-white shadow-slate-900/10 hover:-translate-y-0.5 hover:bg-slate-800"
+                }`}
               >
                 <Plus size={18} />
                 Add Expense
@@ -987,7 +998,11 @@ function App() {
                 <StatCard
                   title="Members"
                   value={String(members.length)}
-                  description={members.map((member) => member.name).join(", ")}
+                  description={
+                    members.length > 0
+                      ? members.map((member) => member.name).join(", ")
+                      : "No members yet"
+                  }
                   icon={Users}
                   tone="purple"
                 />
@@ -1007,6 +1022,33 @@ function App() {
                 />
               </div>
 
+              {members.length === 0 && (
+                <div className="mb-8 rounded-[2rem] border border-emerald-100 bg-emerald-50 p-6">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-emerald-700">
+                        Group setup
+                      </p>
+                      <h3 className="mt-1 text-2xl font-black text-slate-950">
+                        Add your first member
+                      </h3>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                        Group ini belum punya member. Tambahkan anggota dulu
+                        supaya bisa membuat expense dan menghitung split bill.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => setIsAddMemberOpen(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-600"
+                    >
+                      <Users size={18} />
+                      Add First Member
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                 <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
                   <div className="mb-5 flex items-center justify-between">
@@ -1025,13 +1067,36 @@ function App() {
 
                   <div className="space-y-4">
                     {expenses.length === 0 ? (
-                      <div className="rounded-3xl border border-dashed border-slate-200 p-8 text-center">
-                        <p className="font-bold text-slate-700">
-                          Belum ada expense.
+                      <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-3xl bg-sky-50 text-sky-600">
+                          <ReceiptText size={24} />
+                        </div>
+
+                        <p className="text-lg font-black text-slate-800">
+                          No expenses yet
                         </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          Klik Add Expense buat mulai catat patungan.
+
+                        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+                          Tambahkan pengeluaran pertama untuk mulai menghitung
+                          split bill dan balance group ini.
                         </p>
+
+                        <button
+                          onClick={() => {
+                            if (members.length === 0) {
+                              alert(
+                                "Tambahkan member dulu sebelum membuat expense.",
+                              );
+                              return;
+                            }
+
+                            setIsAddExpenseOpen(true);
+                          }}
+                          className="mt-5 inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800"
+                        >
+                          <Plus size={18} />
+                          Add First Expense
+                        </button>
                       </div>
                     ) : (
                       expenses.map((expense) => (
