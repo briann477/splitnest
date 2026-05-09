@@ -119,16 +119,55 @@ function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function Sidebar() {
-  const menus = [
-    { label: "Dashboard", icon: LayoutDashboard, active: true },
-    { label: "Groups", icon: Users },
-    { label: "Expenses", icon: ReceiptText },
-    { label: "Balances", icon: Scale },
-    { label: "Wallet", icon: Wallet },
-    { label: "Settings", icon: Settings },
-  ];
+function scrollToSection(sectionID: string) {
+  const element = document.getElementById(sectionID);
 
+  if (!element) return;
+
+  element.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
+type SidebarProps = {
+  activeMenu: string;
+  onMenuChange: (menu: string) => void;
+};
+
+function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
+  const menus = [
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      onClick: () => scrollToSection("dashboard-section"),
+    },
+    {
+      label: "Groups",
+      icon: Users,
+      onClick: () => scrollToSection("members-section"),
+    },
+    {
+      label: "Expenses",
+      icon: ReceiptText,
+      onClick: () => scrollToSection("expenses-section"),
+    },
+    {
+      label: "Balances",
+      icon: Scale,
+      onClick: () => scrollToSection("balances-section"),
+    },
+    {
+      label: "Wallet",
+      icon: Wallet,
+      onClick: () => alert("Wallet feature is coming soon."),
+    },
+    {
+      label: "Settings",
+      icon: Settings,
+      onClick: () => alert("Settings feature is coming soon."),
+    },
+  ];
   return (
     <aside className="hidden h-screen w-72 border-r border-slate-200 bg-white/90 px-5 py-6 backdrop-blur-xl lg:fixed lg:flex lg:flex-col">
       <div className="mb-10 flex items-center gap-3">
@@ -150,8 +189,12 @@ function Sidebar() {
           return (
             <button
               key={menu.label}
+              onClick={() => {
+                onMenuChange(menu.label);
+                menu.onClick();
+              }}
               className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                menu.active
+                activeMenu === menu.label
                   ? "bg-slate-950 text-white shadow-lg shadow-slate-900/10"
                   : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
               }`}
@@ -925,6 +968,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [settlingKey, setSettlingKey] = useState("");
   const [expenseSearch, setExpenseSearch] = useState("");
 
@@ -1160,11 +1204,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#f6f8fb]">
-      <Sidebar />
+      <Sidebar activeMenu={activeMenu} onMenuChange={setActiveMenu} />
       <MobileTopbar />
 
       <main className="lg:ml-72">
-        <section className="mx-auto max-w-7xl px-4 py-5 md:px-8 md:py-8">
+        <section
+          id="dashboard-section"
+          className="mx-auto max-w-7xl scroll-mt-6 px-4 py-5 md:px-8 md:py-8"
+        >
           <header className="mb-8 flex flex-col gap-5 rounded-[2rem] border border-white bg-white/70 p-5 shadow-sm shadow-slate-200/70 backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="mb-2 text-sm font-bold text-emerald-600">
@@ -1319,7 +1366,10 @@ function App() {
                 </div>
               )}
 
-              <div className="mb-8 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
+              <div
+                id="members-section"
+                className="mb-8 scroll-mt-6 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70"
+              >
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-xl font-black text-slate-950">
@@ -1386,7 +1436,10 @@ function App() {
               </div>
 
               <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
+                <section
+                  id="expenses-section"
+                  className="scroll-mt-6 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70"
+                >
                   <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                       <h3 className="text-xl font-black text-slate-950">
@@ -1507,7 +1560,10 @@ function App() {
                   </div>
                 </section>
 
-                <section className="space-y-6">
+                <section
+                  id="balances-section"
+                  className="scroll-mt-6 space-y-6"
+                >
                   <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
                     <div className="mb-4">
                       <h3 className="text-xl font-black text-slate-950">
