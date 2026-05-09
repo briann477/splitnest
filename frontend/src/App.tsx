@@ -549,15 +549,34 @@ function AddExpenseModal({
 
 type AddGroupModalProps = {
   isOpen: boolean;
+  editingGroup: Group | null;
   onClose: () => void;
   onCreated: (groupID: number) => Promise<void>;
 };
 
-function AddGroupModal({ isOpen, onClose, onCreated }: AddGroupModalProps) {
+function AddGroupModal({
+  isOpen,
+  editingGroup,
+  onClose,
+  onCreated,
+}: AddGroupModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (editingGroup) {
+      setName(editingGroup.name);
+      setDescription(editingGroup.description ?? "");
+      return;
+    }
+
+    setName("");
+    setDescription("");
+  }, [isOpen, editingGroup]);
 
   if (!isOpen) return null;
 
@@ -573,8 +592,14 @@ function AddGroupModal({ isOpen, onClose, onCreated }: AddGroupModalProps) {
     try {
       setSubmitting(true);
 
-      const response = await fetch(`${API_URL}/groups`, {
-        method: "POST",
+      const url = editingGroup
+        ? `${API_URL}/groups/${editingGroup.id}`
+        : `${API_URL}/groups`;
+
+      const method = editingGroup ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -593,7 +618,7 @@ function AddGroupModal({ isOpen, onClose, onCreated }: AddGroupModalProps) {
       setName("");
       setDescription("");
 
-      await onCreated(json.data.id);
+      await onCreated(editingGroup ? editingGroup.id : json.data.id);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
@@ -607,9 +632,11 @@ function AddGroupModal({ isOpen, onClose, onCreated }: AddGroupModalProps) {
       <div className="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl shadow-slate-950/20">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-bold text-emerald-600">New Group</p>
+            <p className="text-sm font-bold text-emerald-600">
+              {editingGroup ? "Edit Group" : "New Group"}
+            </p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">
-              Tambah Group
+              {editingGroup ? "Edit Group" : "Tambah Group"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               Buat group baru untuk trip, kontrakan, event, atau patungan lain.
@@ -669,7 +696,11 @@ function AddGroupModal({ isOpen, onClose, onCreated }: AddGroupModalProps) {
               disabled={submitting}
               className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? "Saving..." : "Save Group"}
+              {submitting
+                ? "Saving..."
+                : editingGroup
+                  ? "Update Group"
+                  : "Save Group"}
             </button>
           </div>
         </form>
@@ -848,6 +879,7 @@ function App() {
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -1077,6 +1109,17 @@ function App() {
               >
                 <Plus size={18} />
                 New Group
+              </button>
+
+              <button
+                onClick={() => {
+                  if (!group) return;
+                  setEditingGroup(group);
+                }}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                <Pencil size={18} />
+                Edit Group
               </button>
 
               <button
@@ -1516,10 +1559,15 @@ function App() {
       />
 
       <AddGroupModal
-        isOpen={isAddGroupOpen}
-        onClose={() => setIsAddGroupOpen(false)}
+        isOpen={isAddGroupOpen || editingGroup !== null}
+        editingGroup={editingGroup}
+        onClose={() => {
+          setIsAddGroupOpen(false);
+          setEditingGroup(null);
+        }}
         onCreated={async (groupID) => {
           setActiveGroupID(groupID);
+          await fetchData();
         }}
       />
 
