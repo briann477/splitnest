@@ -6,25 +6,33 @@ This project was built as a full-stack portfolio project using Go, MySQL, React,
 
 ## Preview
 
-### Dashboard
+### Desktop Dashboard
 
-![SplitNest Dashboard](docs/images/dashboard.png)
+![SplitNest Desktop Dashboard](docs/images/dashboard-desktop.png)
+
+### Mobile Dashboard
+
+![SplitNest Mobile Dashboard](docs/images/dashboard-mobile.png)
 
 ## Overview
 
 Managing shared expenses can be messy, especially during trips, house sharing, small events, or group activities. People often forget who paid first, how much each person should pay, and whether a payment has already been settled.
 
-SplitNest solves this problem by providing a simple dashboard to record expenses, split bills automatically, and show balance calculations clearly.
+SplitNest solves this problem by providing a simple dashboard to record expenses, split bills automatically, calculate balances, and record settlement history clearly.
 
 ## Features
 
-- Group management
-- Member management
+- Dynamic group management
+- Member management per group
 - Add shared expenses
+- Delete expenses
+- Expense search
 - Equal split bill calculation
 - Automatic balance calculation
 - Settlement suggestions
-- Modern dashboard UI
+- Mark settlement as paid
+- Settlement history
+- Responsive dashboard UI
 - React frontend connected to Go REST API
 
 ## Tech Stack
@@ -65,7 +73,8 @@ splitnest/
 │
 ├── docs/
 │   └── images/
-│       └── dashboard.png
+│       ├── dashboard-desktop.png
+│       └── dashboard-mobile.png
 │
 └── README.md
 ```
@@ -159,8 +168,9 @@ DELETE /api/members/{id}
 ### Expenses
 
 ```http
-GET  /api/groups/{groupID}/expenses
-POST /api/groups/{groupID}/expenses
+GET    /api/groups/{groupID}/expenses
+POST   /api/groups/{groupID}/expenses
+DELETE /api/expenses/{id}
 ```
 
 ### Balances
@@ -169,27 +179,39 @@ POST /api/groups/{groupID}/expenses
 GET /api/groups/{groupID}/balances
 ```
 
+### Settlements
+
+```http
+GET  /api/groups/{groupID}/settlements
+POST /api/groups/{groupID}/settlements
+```
+
 ## Current MVP Status
 
 The current MVP supports:
 
-- Creating groups
-- Adding members
-- Adding shared expenses
+- Creating and switching between groups
+- Adding members to a selected group
+- Adding shared expenses by group
+- Searching expenses
+- Deleting expenses
 - Equal split calculation
 - Balance calculation
 - Settlement suggestions
-- Frontend dashboard with live API data
+- Marking settlements as paid
+- Settlement history
+- Responsive frontend dashboard with live API data
 
 ## Roadmap
 
-- Mark settlement as paid
+- Edit expenses
+- Edit group and member data
 - Expense categories
-- Filter and search
+- Filter expenses by date
 - Login and user account
 - Receipt upload
 - Export report
-- Responsive mobile polish
+- Backend deployment
 
 ## Author
 
