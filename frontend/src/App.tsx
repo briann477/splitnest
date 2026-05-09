@@ -681,6 +681,7 @@ function AddGroupModal({ isOpen, onClose, onCreated }: AddGroupModalProps) {
 type AddMemberModalProps = {
   activeGroupID: number;
   isOpen: boolean;
+  editingMember: Member | null;
   onClose: () => void;
   onCreated: () => Promise<void>;
 };
@@ -688,6 +689,7 @@ type AddMemberModalProps = {
 function AddMemberModal({
   activeGroupID,
   isOpen,
+  editingMember,
   onClose,
   onCreated,
 }: AddMemberModalProps) {
@@ -695,6 +697,19 @@ function AddMemberModal({
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (editingMember) {
+      setName(editingMember.name);
+      setEmail(editingMember.email ?? "");
+      return;
+    }
+
+    setName("");
+    setEmail("");
+  }, [isOpen, editingMember]);
 
   if (!isOpen) return null;
 
@@ -710,19 +725,22 @@ function AddMemberModal({
     try {
       setSubmitting(true);
 
-      const response = await fetch(
-        `${API_URL}/groups/${activeGroupID}/members`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: name.trim(),
-            email: email.trim() || null,
-          }),
+      const url = editingMember
+        ? `${API_URL}/members/${editingMember.id}`
+        : `${API_URL}/groups/${activeGroupID}/members`;
+
+      const method = editingMember ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim() || null,
+        }),
+      });
 
       const json = await response.json();
 
@@ -747,9 +765,11 @@ function AddMemberModal({
       <div className="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl shadow-slate-950/20">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-bold text-emerald-600">New Member</p>
+            <p className="text-sm font-bold text-emerald-600">
+              {editingMember ? "Edit Member" : "New Member"}
+            </p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">
-              Tambah Member
+              {editingMember ? "Edit Member" : "Tambah Member"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               Tambahkan anggota ke group aktif agar bisa ikut split bill.
@@ -809,7 +829,11 @@ function AddMemberModal({
               disabled={submitting}
               className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? "Saving..." : "Save Member"}
+              {submitting
+                ? "Saving..."
+                : editingMember
+                  ? "Update Member"
+                  : "Save Member"}
             </button>
           </div>
         </form>
@@ -825,6 +849,7 @@ function App() {
   const [members, setMembers] = useState<Member[]>([]);
   const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [balanceData, setBalanceData] = useState<BalanceData | null>(null);
   const [settlementHistory, setSettlementHistory] = useState<
@@ -873,6 +898,35 @@ function App() {
       console.error("Failed to fetch SplitNest data:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function deleteMember(memberID: number) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this member?",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_URL}/members/${memberID}`, {
+        method: "DELETE",
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          json.message ||
+            "Failed to delete member. This member may already be used in expenses or settlements.",
+        );
+      }
+
+      await fetchData();
+    } catch (error) {
+      alert(
+        error instanceof Error ? error.message : "Failed to delete member.",
+      );
     }
   }
 
@@ -1121,6 +1175,72 @@ function App() {
                   </div>
                 </div>
               )}
+
+              <div className="mb-8 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
+                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-950">
+                      Members
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      Anggota group aktif
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setIsAddMemberOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800"
+                  >
+                    <Users size={18} />
+                    Add Member
+                  </button>
+                </div>
+
+                {members.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center">
+                    <p className="font-bold text-slate-700">No members yet.</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Tambahkan member pertama untuk mulai membuat expense.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {members.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between gap-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4"
+                      >
+                        <div>
+                          <p className="font-black text-slate-950">
+                            {member.name}
+                          </p>
+                          <p className="text-sm font-semibold text-slate-500">
+                            {member.email ?? "No email"}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setEditingMember(member)}
+                            className="rounded-xl bg-sky-50 p-2 text-sky-500 transition hover:bg-sky-100"
+                            title="Edit member"
+                          >
+                            <Pencil size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => deleteMember(member.id)}
+                            className="rounded-xl bg-rose-50 p-2 text-rose-500 transition hover:bg-rose-100"
+                            title="Delete member"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                 <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
@@ -1405,8 +1525,12 @@ function App() {
 
       <AddMemberModal
         activeGroupID={activeGroupID}
-        isOpen={isAddMemberOpen}
-        onClose={() => setIsAddMemberOpen(false)}
+        isOpen={isAddMemberOpen || editingMember !== null}
+        editingMember={editingMember}
+        onClose={() => {
+          setIsAddMemberOpen(false);
+          setEditingMember(null);
+        }}
         onCreated={fetchData}
       />
     </div>
