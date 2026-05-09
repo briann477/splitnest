@@ -5,6 +5,7 @@ import {
   CircleDollarSign,
   CreditCard,
   LayoutDashboard,
+  Pencil,
   Plus,
   ReceiptText,
   Scale,
@@ -232,6 +233,7 @@ type AddExpenseModalProps = {
   activeGroupID: number;
   members: Member[];
   isOpen: boolean;
+  editingExpense: Expense | null;
   onClose: () => void;
   onCreated: () => Promise<void>;
 };
@@ -239,6 +241,7 @@ function AddExpenseModal({
   activeGroupID,
   members,
   isOpen,
+  editingExpense,
   onClose,
   onCreated,
 }: AddExpenseModalProps) {
@@ -255,7 +258,24 @@ function AddExpenseModal({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (isOpen && members.length > 0) {
+    if (!isOpen) return;
+
+    if (editingExpense) {
+      setForm({
+        title: editingExpense.title,
+        amount: String(editingExpense.amount),
+        expense_date: editingExpense.expense_date.slice(0, 10),
+        notes: editingExpense.notes ?? "",
+        paid_by_member_id: String(editingExpense.paid_by_member_id),
+        participant_ids: editingExpense.participants.map(
+          (participant) => participant.member_id,
+        ),
+      });
+
+      return;
+    }
+
+    if (members.length > 0) {
       setForm((current) => ({
         ...current,
         paid_by_member_id: current.paid_by_member_id || String(members[0].id),
@@ -265,7 +285,7 @@ function AddExpenseModal({
             : members.map((m) => m.id),
       }));
     }
-  }, [isOpen, members]);
+  }, [isOpen, members, editingExpense]);
 
   if (!isOpen) return null;
 
@@ -317,23 +337,26 @@ function AddExpenseModal({
     try {
       setSubmitting(true);
 
-      const response = await fetch(
-        `${API_URL}/groups/${activeGroupID}/expenses`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title: form.title.trim(),
-            amount: amountNumber,
-            expense_date: form.expense_date,
-            notes: form.notes.trim() || null,
-            paid_by_member_id: payerID,
-            participant_ids: form.participant_ids,
-          }),
+      const url = editingExpense
+        ? `${API_URL}/expenses/${editingExpense.id}`
+        : `${API_URL}/groups/${activeGroupID}/expenses`;
+
+      const method = editingExpense ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          title: form.title.trim(),
+          amount: amountNumber,
+          expense_date: form.expense_date,
+          notes: form.notes.trim() || null,
+          paid_by_member_id: payerID,
+          participant_ids: form.participant_ids,
+        }),
+      });
 
       const json = await response.json();
 
@@ -364,9 +387,11 @@ function AddExpenseModal({
       <div className="w-full max-w-2xl rounded-[2rem] bg-white p-6 shadow-2xl shadow-slate-950/20">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-bold text-emerald-600">New Expense</p>
+            <p className="text-sm font-bold text-emerald-600">
+              {editingExpense ? "Edit Expense" : "New Expense"}
+            </p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">
-              Tambah Pengeluaran
+              {editingExpense ? "Edit Pengeluaran" : "Tambah Pengeluaran"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               Catat siapa yang bayar duluan dan siapa aja yang ikut patungan.
@@ -509,7 +534,11 @@ function AddExpenseModal({
               disabled={submitting}
               className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? "Saving..." : "Save Expense"}
+              {submitting
+                ? "Saving..."
+                : editingExpense
+                  ? "Update Expense"
+                  : "Save Expense"}
             </button>
           </div>
         </form>
@@ -803,6 +832,7 @@ function App() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [settlingKey, setSettlingKey] = useState("");
   const [expenseSearch, setExpenseSearch] = useState("");
 
@@ -1177,11 +1207,11 @@ function App() {
                               </p>
 
                               <button
-                                onClick={() => deleteExpense(expense.id)}
-                                className="rounded-xl bg-rose-50 p-2 text-rose-500 transition hover:bg-rose-100"
-                                title="Delete expense"
+                                onClick={() => setEditingExpense(expense)}
+                                className="rounded-xl bg-sky-50 p-2 text-sky-500 transition hover:bg-sky-100"
+                                title="Edit expense"
                               >
-                                <Trash2 size={17} />
+                                <Pencil size={17} />
                               </button>
                             </div>
                           </div>
@@ -1356,8 +1386,12 @@ function App() {
       <AddExpenseModal
         activeGroupID={activeGroupID}
         members={members}
-        isOpen={isAddExpenseOpen}
-        onClose={() => setIsAddExpenseOpen(false)}
+        isOpen={isAddExpenseOpen || editingExpense !== null}
+        editingExpense={editingExpense}
+        onClose={() => {
+          setIsAddExpenseOpen(false);
+          setEditingExpense(null);
+        }}
         onCreated={fetchData}
       />
 

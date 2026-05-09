@@ -22,6 +22,9 @@ func NewExpenseHandler(db *sql.DB) *ExpenseHandler {
 	return &ExpenseHandler{DB: db}
 }
 
+
+
+
 func (h *ExpenseHandler) GetExpensesByGroupID(w http.ResponseWriter, r *http.Request) {
 	groupID, err := strconv.ParseInt(chi.URLParam(r, "groupID"), 10, 64)
 	if err != nil {
@@ -374,6 +377,153 @@ func containsID(ids []int64, target int64) bool {
 	}
 
 	return false
+}
+
+func (h *ExpenseHandler) UpdateExpense(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid expense ID")
+		return
+	}
+
+	var request models.CreateExpenseRequest
+
+	err = json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	request.Title = strings.TrimSpace(request.Title)
+
+	if request.Title == "" {
+		writeError(w, http.StatusBadRequest, "Expense title is required")
+		return
+	}
+
+	if request.Amount <= 0 {
+		writeError(w, http.StatusBadRequest, "Expense amount must be greater than zero")
+		return
+	}
+
+	if request.PaidByMemberID <= 0 {
+		writeError(w, http.StatusBadRequest, "Paid by member is required")
+		return
+	}
+
+	if len(request.ParticipantIDs) == 0 {
+		writeError(w, http.StatusBadRequest, "At least one participant is required")
+		return
+	}
+
+	expenseDate, err := time.Parse("2006-01-02", request.ExpenseDate)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Expense date format must be YYYY-MM-DD")
+		return
+	}
+
+	var groupID int64
+
+	err = h.DB.QueryRow(`
+		SELECT group_id
+		FROM expenses
+		WHERE id = ?
+	`, id).Scan(&groupID)
+	if err == sql.ErrNoRows {
+		writeError(w, http.StatusNotFound, "Expense not found")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to get expense")
+		return
+	}
+
+	paidByBelongsToGroup, err := h.checkMemberBelongsToGroup(request.PaidByMemberID, groupID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to check payer member")
+		return
+	}
+
+	if !paidByBelongsToGroup {
+		writeError(w, http.StatusBadRequest, "Paid by member does not belong to this group")
+		return
+	}
+
+	if !containsID(request.ParticipantIDs, request.PaidByMemberID) {
+		writeError(w, http.StatusBadRequest, "Paid by member must be included in participants")
+		return
+	}
+
+	participantsValid, err := h.checkMembersBelongToGroup(request.ParticipantIDs, groupID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to check participants")
+		return
+	}
+
+	if !participantsValid {
+		writeError(w, http.StatusBadRequest, "One or more participants do not belong to this group")
+		return
+	}
+
+	shareAmount := request.Amount / float64(len(request.ParticipantIDs))
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to start transaction")
+		return
+	}
+
+	_, err = tx.Exec(`
+		UPDATE expenses
+		SET paid_by_member_id = ?, title = ?, amount = ?, expense_date = ?, notes = ?
+		WHERE id = ?
+	`, request.PaidByMemberID, request.Title, request.Amount, expenseDate, request.Notes, id)
+	if err != nil {
+		tx.Rollback()
+		writeError(w, http.StatusInternalServerError, "Failed to update expense")
+		return
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM expense_participants
+		WHERE expense_id = ?
+	`, id)
+	if err != nil {
+		tx.Rollback()
+		writeError(w, http.StatusInternalServerError, "Failed to reset expense participants")
+		return
+	}
+
+	for _, memberID := range request.ParticipantIDs {
+		_, err := tx.Exec(`
+			INSERT INTO expense_participants (expense_id, member_id, share_amount)
+			VALUES (?, ?, ?)
+		`, id, memberID, shareAmount)
+		if err != nil {
+			tx.Rollback()
+			writeError(w, http.StatusInternalServerError, "Failed to update expense participants")
+			return
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to commit transaction")
+		return
+	}
+
+	expense, err := h.getExpenseByID(id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to get updated expense")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":       "success",
+		"message":      "Expense updated successfully",
+		"share_amount": shareAmount,
+		"data":         expense,
+	})
 }
 
 func (h *ExpenseHandler) DeleteExpense(w http.ResponseWriter, r *http.Request) {
