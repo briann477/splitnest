@@ -22,9 +22,6 @@ func NewExpenseHandler(db *sql.DB) *ExpenseHandler {
 	return &ExpenseHandler{DB: db}
 }
 
-
-
-
 func (h *ExpenseHandler) GetExpensesByGroupID(w http.ResponseWriter, r *http.Request) {
 	groupID, err := strconv.ParseInt(chi.URLParam(r, "groupID"), 10, 64)
 	if err != nil {
@@ -39,6 +36,7 @@ func (h *ExpenseHandler) GetExpensesByGroupID(w http.ResponseWriter, r *http.Req
 			e.paid_by_member_id,
 			m.name AS paid_by_name,
 			e.title,
+			e.category,
 			e.amount,
 			e.expense_date,
 			e.notes,
@@ -66,6 +64,7 @@ func (h *ExpenseHandler) GetExpensesByGroupID(w http.ResponseWriter, r *http.Req
 			&expense.PaidByMemberID,
 			&expense.PaidByName,
 			&expense.Title,
+			&expense.Category,
 			&expense.Amount,
 			&expense.ExpenseDate,
 			&expense.Notes,
@@ -109,6 +108,12 @@ func (h *ExpenseHandler) CreateExpense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request.Title = strings.TrimSpace(request.Title)
+
+	request.Category = strings.TrimSpace(request.Category)
+
+	if request.Category == "" {
+		request.Category = "Other"
+	}
 
 	if request.Title == "" {
 		writeError(w, http.StatusBadRequest, "Expense title is required")
@@ -183,9 +188,23 @@ func (h *ExpenseHandler) CreateExpense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := tx.Exec(`
-		INSERT INTO expenses (group_id, paid_by_member_id, title, amount, expense_date, notes)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, groupID, request.PaidByMemberID, request.Title, request.Amount, expenseDate, request.Notes)
+		INSERT INTO expenses (
+		group_id,
+		paid_by_member_id,
+		title,
+		category,
+		amount,
+		expense_date,
+		notes
+	)
+	VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, groupID,
+		request.PaidByMemberID,
+		request.Title,
+		request.Category,
+		request.Amount,
+		expenseDate,
+		request.Notes)
 	if err != nil {
 		tx.Rollback()
 		writeError(w, http.StatusInternalServerError, "Failed to create expense")
@@ -235,12 +254,13 @@ func (h *ExpenseHandler) getExpenseByID(expenseID int64) (models.ExpenseWithPart
 	var expense models.ExpenseWithParticipants
 
 	err := h.DB.QueryRow(`
-		SELECT 
+		SELECT
 			e.id,
 			e.group_id,
 			e.paid_by_member_id,
 			m.name AS paid_by_name,
 			e.title,
+			e.category,
 			e.amount,
 			e.expense_date,
 			e.notes,
@@ -249,12 +269,13 @@ func (h *ExpenseHandler) getExpenseByID(expenseID int64) (models.ExpenseWithPart
 		FROM expenses e
 		JOIN members m ON m.id = e.paid_by_member_id
 		WHERE e.id = ?
-	`, expenseID).Scan(
+		`, expenseID).Scan(
 		&expense.ID,
 		&expense.GroupID,
 		&expense.PaidByMemberID,
 		&expense.PaidByName,
 		&expense.Title,
+		&expense.Category,
 		&expense.Amount,
 		&expense.ExpenseDate,
 		&expense.Notes,
@@ -396,6 +417,12 @@ func (h *ExpenseHandler) UpdateExpense(w http.ResponseWriter, r *http.Request) {
 
 	request.Title = strings.TrimSpace(request.Title)
 
+	request.Category = strings.TrimSpace(request.Category)
+
+	if request.Category == "" {
+		request.Category = "Other"
+	}
+
 	if request.Title == "" {
 		writeError(w, http.StatusBadRequest, "Expense title is required")
 		return
@@ -475,9 +502,9 @@ func (h *ExpenseHandler) UpdateExpense(w http.ResponseWriter, r *http.Request) {
 
 	_, err = tx.Exec(`
 		UPDATE expenses
-		SET paid_by_member_id = ?, title = ?, amount = ?, expense_date = ?, notes = ?
+		SET paid_by_member_id = ?, title = ?, category = ?, amount = ?, expense_date = ?, notes = ?
 		WHERE id = ?
-	`, request.PaidByMemberID, request.Title, request.Amount, expenseDate, request.Notes, id)
+	`, request.PaidByMemberID, request.Title, request.Category, request.Amount, expenseDate, request.Notes, id)
 	if err != nil {
 		tx.Rollback()
 		writeError(w, http.StatusInternalServerError, "Failed to update expense")

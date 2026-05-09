@@ -7,6 +7,7 @@ type Expense struct {
 	GroupID        int64     `json:"group_id"`
 	PaidByMemberID int64     `json:"paid_by_member_id"`
 	Title          string    `json:"title"`
+	Category       string    `json:"category"`
 	Amount         float64   `json:"amount"`
 	ExpenseDate    time.Time `json:"expense_date"`
 	Notes          *string   `json:"notes"`
@@ -23,21 +24,23 @@ type ExpenseParticipant struct {
 }
 
 type ExpenseWithParticipants struct {
-	ID             int64                 `json:"id"`
-	GroupID        int64                 `json:"group_id"`
-	PaidByMemberID int64                 `json:"paid_by_member_id"`
-	PaidByName     string                `json:"paid_by_name"`
-	Title          string                `json:"title"`
-	Amount         float64               `json:"amount"`
-	ExpenseDate    time.Time             `json:"expense_date"`
-	Notes          *string               `json:"notes"`
-	CreatedAt      time.Time             `json:"created_at"`
-	UpdatedAt      time.Time             `json:"updated_at"`
-	Participants   []ExpenseParticipant  `json:"participants"`
+	ID             int64                `json:"id"`
+	GroupID        int64                `json:"group_id"`
+	PaidByMemberID int64                `json:"paid_by_member_id"`
+	PaidByName     string               `json:"paid_by_name"`
+	Title          string               `json:"title"`
+	Category       string               `json:"category"`
+	Amount         float64              `json:"amount"`
+	ExpenseDate    time.Time            `json:"expense_date"`
+	Notes          *string              `json:"notes"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
+	Participants   []ExpenseParticipant `json:"participants"`
 }
 
 type CreateExpenseRequest struct {
 	Title          string  `json:"title"`
+	Category       string  `json:"category"`
 	Amount         float64 `json:"amount"`
 	ExpenseDate    string  `json:"expense_date"`
 	Notes          *string `json:"notes"`

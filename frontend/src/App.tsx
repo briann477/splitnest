@@ -19,6 +19,16 @@ import {
 const API_URL = "http://localhost:8080/api";
 const GROUP_ID = 1;
 
+const EXPENSE_CATEGORIES = [
+  "Food",
+  "Transport",
+  "Utilities",
+  "House Supplies",
+  "Rent",
+  "Entertainment",
+  "Other",
+];
+
 type Group = {
   id: number;
   name: string;
@@ -46,6 +56,7 @@ type Expense = {
   paid_by_member_id: number;
   paid_by_name: string;
   title: string;
+  category: string;
   amount: number;
   expense_date: string;
   notes: string | null;
@@ -88,6 +99,7 @@ type BalanceData = {
 
 type AddExpenseForm = {
   title: string;
+  category: string;
   amount: string;
   expense_date: string;
   notes: string;
@@ -247,6 +259,7 @@ function AddExpenseModal({
 }: AddExpenseModalProps) {
   const [form, setForm] = useState<AddExpenseForm>({
     title: "",
+    category: "Other",
     amount: "",
     expense_date: getTodayDate(),
     notes: "",
@@ -263,6 +276,7 @@ function AddExpenseModal({
     if (editingExpense) {
       setForm({
         title: editingExpense.title,
+        category: editingExpense.category || "Other",
         amount: String(editingExpense.amount),
         expense_date: editingExpense.expense_date.slice(0, 10),
         notes: editingExpense.notes ?? "",
@@ -350,6 +364,7 @@ function AddExpenseModal({
         },
         body: JSON.stringify({
           title: form.title.trim(),
+          category: form.category,
           amount: amountNumber,
           expense_date: form.expense_date,
           notes: form.notes.trim() || null,
@@ -366,6 +381,7 @@ function AddExpenseModal({
 
       setForm({
         title: "",
+        category: "Other",
         amount: "",
         expense_date: getTodayDate(),
         notes: "",
@@ -441,6 +457,25 @@ function AddExpenseModal({
                 placeholder="Contoh: 300000"
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
               />
+            </label>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">Category</span>
+              <select
+                value={form.category}
+                onChange={(event) =>
+                  setForm({ ...form, category: event.target.value })
+                }
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
+              >
+                {EXPENSE_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
 
@@ -1087,6 +1122,22 @@ function App() {
     });
   }, [expenses, expenseSearch]);
 
+  const categoryBreakdown = useMemo(() => {
+    const breakdown = new Map<string, number>();
+
+    expenses.forEach((expense) => {
+      const currentTotal = breakdown.get(expense.category) ?? 0;
+      breakdown.set(expense.category, currentTotal + expense.amount);
+    });
+
+    return Array.from(breakdown.entries())
+      .map(([category, total]) => ({
+        category,
+        total,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [expenses]);
+
   const totalExpense = useMemo(() => {
     return expenses.reduce((total, expense) => total + expense.amount, 0);
   }, [expenses]);
@@ -1403,9 +1454,16 @@ function App() {
                         >
                           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                             <div>
-                              <h4 className="text-lg font-black text-slate-950">
-                                {expense.title}
-                              </h4>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="text-lg font-black text-slate-950">
+                                  {expense.title}
+                                </h4>
+
+                                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-600">
+                                  {expense.category}
+                                </span>
+                              </div>
+
                               <p className="mt-1 text-sm text-slate-500">
                                 Paid by{" "}
                                 <span className="font-bold text-slate-700">
@@ -1450,6 +1508,49 @@ function App() {
                 </section>
 
                 <section className="space-y-6">
+                  <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
+                    <div className="mb-4">
+                      <h3 className="text-xl font-black text-slate-950">
+                        Category Breakdown
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        Total pengeluaran berdasarkan kategori.
+                      </p>
+                    </div>
+
+                    {categoryBreakdown.length === 0 ? (
+                      <div className="rounded-3xl border border-dashed border-slate-200 p-6 text-center">
+                        <p className="text-sm font-bold text-slate-500">
+                          Belum ada data kategori.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {categoryBreakdown.map((item) => (
+                          <div
+                            key={item.category}
+                            className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4"
+                          >
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <p className="font-black text-slate-950">
+                                  {item.category}
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  Expense category
+                                </p>
+                              </div>
+
+                              <p className="font-black text-slate-950">
+                                {formatRupiah(item.total)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
                     <div className="mb-5">
                       <h3 className="text-xl font-black text-slate-950">
