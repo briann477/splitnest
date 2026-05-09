@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   CheckCircle2,
@@ -12,108 +12,108 @@ import {
   Users,
   Wallet,
   X,
-} from 'lucide-react'
+} from "lucide-react";
 
-const API_URL = 'http://localhost:8080/api'
-const GROUP_ID = 1
+const API_URL = "http://localhost:8080/api";
+const GROUP_ID = 1;
 
 type Group = {
-  id: number
-  name: string
-  description: string | null
-}
+  id: number;
+  name: string;
+  description: string | null;
+};
 
 type Member = {
-  id: number
-  group_id: number
-  name: string
-  email: string | null
-}
+  id: number;
+  group_id: number;
+  name: string;
+  email: string | null;
+};
 
 type ExpenseParticipant = {
-  id: number
-  expense_id: number
-  member_id: number
-  member_name: string
-  share_amount: number
-}
+  id: number;
+  expense_id: number;
+  member_id: number;
+  member_name: string;
+  share_amount: number;
+};
 
 type Expense = {
-  id: number
-  group_id: number
-  paid_by_member_id: number
-  paid_by_name: string
-  title: string
-  amount: number
-  expense_date: string
-  notes: string | null
-  participants: ExpenseParticipant[]
-}
+  id: number;
+  group_id: number;
+  paid_by_member_id: number;
+  paid_by_name: string;
+  title: string;
+  amount: number;
+  expense_date: string;
+  notes: string | null;
+  participants: ExpenseParticipant[];
+};
 
 type MemberBalance = {
-  member_id: number
-  member_name: string
-  paid: number
-  share: number
-  balance: number
-}
+  member_id: number;
+  member_name: string;
+  paid: number;
+  share: number;
+  balance: number;
+};
 
 type SettlementSuggestion = {
-  from_member_id: number
-  from_member_name: string
-  to_member_id: number
-  to_member_name: string
-  amount: number
-}
+  from_member_id: number;
+  from_member_name: string;
+  to_member_id: number;
+  to_member_name: string;
+  amount: number;
+};
 
 type SettlementHistory = {
-  id: number
-  group_id: number
-  from_member_id: number
-  from_member_name: string
-  to_member_id: number
-  to_member_name: string
-  amount: number
-  status: string
-  settled_at: string | null
-  created_at: string
-}
+  id: number;
+  group_id: number;
+  from_member_id: number;
+  from_member_name: string;
+  to_member_id: number;
+  to_member_name: string;
+  amount: number;
+  status: string;
+  settled_at: string | null;
+  created_at: string;
+};
 
 type BalanceData = {
-  balances: MemberBalance[]
-  settlements: SettlementSuggestion[]
-}
+  balances: MemberBalance[];
+  settlements: SettlementSuggestion[];
+};
 
 type AddExpenseForm = {
-  title: string
-  amount: string
-  expense_date: string
-  notes: string
-  paid_by_member_id: string
-  participant_ids: number[]
-}
+  title: string;
+  amount: string;
+  expense_date: string;
+  notes: string;
+  paid_by_member_id: string;
+  participant_ids: number[];
+};
 
 function formatRupiah(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     maximumFractionDigits: 0,
-  }).format(value)
+  }).format(value);
 }
 
 function getTodayDate() {
-  return new Date().toISOString().slice(0, 10)
+  return new Date().toISOString().slice(0, 10);
 }
 
 function Sidebar() {
   const menus = [
-    { label: 'Dashboard', icon: LayoutDashboard, active: true },
-    { label: 'Groups', icon: Users },
-    { label: 'Expenses', icon: ReceiptText },
-    { label: 'Balances', icon: Scale },
-    { label: 'Wallet', icon: Wallet },
-    { label: 'Settings', icon: Settings },
-  ]
+    { label: "Dashboard", icon: LayoutDashboard, active: true },
+    { label: "Groups", icon: Users },
+    { label: "Expenses", icon: ReceiptText },
+    { label: "Balances", icon: Scale },
+    { label: "Wallet", icon: Wallet },
+    { label: "Settings", icon: Settings },
+  ];
 
   return (
     <aside className="hidden h-screen w-72 border-r border-slate-200 bg-white/90 px-5 py-6 backdrop-blur-xl lg:fixed lg:flex lg:flex-col">
@@ -122,28 +122,30 @@ function Sidebar() {
           SN
         </div>
         <div>
-          <h1 className="text-xl font-black tracking-tight text-slate-950">SplitNest</h1>
+          <h1 className="text-xl font-black tracking-tight text-slate-950">
+            SplitNest
+          </h1>
           <p className="text-xs font-medium text-slate-500">Expense manager</p>
         </div>
       </div>
 
       <nav className="space-y-2">
         {menus.map((menu) => {
-          const Icon = menu.icon
+          const Icon = menu.icon;
 
           return (
             <button
               key={menu.label}
               className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                 menu.active
-                  ? 'bg-slate-950 text-white shadow-lg shadow-slate-900/10'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-950'
+                  ? "bg-slate-950 text-white shadow-lg shadow-slate-900/10"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
               }`}
             >
               <Icon size={18} />
               {menu.label}
             </button>
-          )
+          );
         })}
       </nav>
 
@@ -157,153 +159,175 @@ function Sidebar() {
         </p>
       </div>
     </aside>
-  )
+  );
 }
 
 type StatCardProps = {
-  title: string
-  value: string
-  description: string
-  icon: React.ElementType
-  tone: 'blue' | 'green' | 'red' | 'purple'
-}
+  title: string;
+  value: string;
+  description: string;
+  icon: React.ElementType;
+  tone: "blue" | "green" | "red" | "purple";
+};
 
-function StatCard({ title, value, description, icon: Icon, tone }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  tone,
+}: StatCardProps) {
   const tones = {
-    blue: 'bg-sky-50 text-sky-600',
-    green: 'bg-emerald-50 text-emerald-600',
-    red: 'bg-rose-50 text-rose-600',
-    purple: 'bg-violet-50 text-violet-600',
-  }
+    blue: "bg-sky-50 text-sky-600",
+    green: "bg-emerald-50 text-emerald-600",
+    red: "bg-rose-50 text-rose-600",
+    purple: "bg-violet-50 text-violet-600",
+  };
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60">
-      <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-2xl ${tones[tone]}`}>
+      <div
+        className={`mb-4 flex h-11 w-11 items-center justify-center rounded-2xl ${tones[tone]}`}
+      >
         <Icon size={21} />
       </div>
       <p className="text-sm font-semibold text-slate-500">{title}</p>
-      <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</h2>
+      <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+        {value}
+      </h2>
       <p className="mt-1 truncate text-sm text-slate-500">{description}</p>
     </div>
-  )
+  );
 }
 
 type AddExpenseModalProps = {
-  members: Member[]
-  isOpen: boolean
-  onClose: () => void
-  onCreated: () => Promise<void>
-}
-
-function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModalProps) {
+  activeGroupID: number;
+  members: Member[];
+  isOpen: boolean;
+  onClose: () => void;
+  onCreated: () => Promise<void>;
+};
+function AddExpenseModal({
+  activeGroupID,
+  members,
+  isOpen,
+  onClose,
+  onCreated,
+}: AddExpenseModalProps) {
   const [form, setForm] = useState<AddExpenseForm>({
-    title: '',
-    amount: '',
+    title: "",
+    amount: "",
     expense_date: getTodayDate(),
-    notes: '',
-    paid_by_member_id: '',
+    notes: "",
+    paid_by_member_id: "",
     participant_ids: [],
-  })
+  });
 
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isOpen && members.length > 0) {
       setForm((current) => ({
         ...current,
         paid_by_member_id: current.paid_by_member_id || String(members[0].id),
-        participant_ids: current.participant_ids.length > 0 ? current.participant_ids : members.map((m) => m.id),
-      }))
+        participant_ids:
+          current.participant_ids.length > 0
+            ? current.participant_ids
+            : members.map((m) => m.id),
+      }));
     }
-  }, [isOpen, members])
+  }, [isOpen, members]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   function toggleParticipant(memberID: number) {
     setForm((current) => {
-      const exists = current.participant_ids.includes(memberID)
+      const exists = current.participant_ids.includes(memberID);
 
       return {
         ...current,
         participant_ids: exists
           ? current.participant_ids.filter((id) => id !== memberID)
           : [...current.participant_ids, memberID],
-      }
-    })
+      };
+    });
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError('')
+    event.preventDefault();
+    setError("");
 
-    const amountNumber = Number(form.amount)
-    const payerID = Number(form.paid_by_member_id)
+    const amountNumber = Number(form.amount);
+    const payerID = Number(form.paid_by_member_id);
 
     if (!form.title.trim()) {
-      setError('Judul expense wajib diisi.')
-      return
+      setError("Judul expense wajib diisi.");
+      return;
     }
 
     if (!amountNumber || amountNumber <= 0) {
-      setError('Nominal harus lebih dari 0.')
-      return
+      setError("Nominal harus lebih dari 0.");
+      return;
     }
 
     if (!payerID) {
-      setError('Pilih siapa yang bayar duluan.')
-      return
+      setError("Pilih siapa yang bayar duluan.");
+      return;
     }
 
     if (form.participant_ids.length === 0) {
-      setError('Pilih minimal satu peserta split.')
-      return
+      setError("Pilih minimal satu peserta split.");
+      return;
     }
 
     if (!form.participant_ids.includes(payerID)) {
-      setError('Pembayar harus termasuk peserta split.')
-      return
+      setError("Pembayar harus termasuk peserta split.");
+      return;
     }
 
     try {
-      setSubmitting(true)
+      setSubmitting(true);
 
-      const response = await fetch(`${API_URL}/groups/${GROUP_ID}/expenses`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${API_URL}/groups/${activeGroupID}/expenses`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: form.title.trim(),
+            amount: amountNumber,
+            expense_date: form.expense_date,
+            notes: form.notes.trim() || null,
+            paid_by_member_id: payerID,
+            participant_ids: form.participant_ids,
+          }),
         },
-        body: JSON.stringify({
-          title: form.title.trim(),
-          amount: amountNumber,
-          expense_date: form.expense_date,
-          notes: form.notes.trim() || null,
-          paid_by_member_id: payerID,
-          participant_ids: form.participant_ids,
-        }),
-      })
+      );
 
-      const json = await response.json()
+      const json = await response.json();
 
       if (!response.ok) {
-        throw new Error(json.message || 'Gagal membuat expense.')
+        throw new Error(json.message || "Gagal membuat expense.");
       }
 
       setForm({
-        title: '',
-        amount: '',
+        title: "",
+        amount: "",
         expense_date: getTodayDate(),
-        notes: '',
-        paid_by_member_id: members[0] ? String(members[0].id) : '',
+        notes: "",
+        paid_by_member_id: members[0] ? String(members[0].id) : "",
         participant_ids: members.map((member) => member.id),
-      })
+      });
 
-      await onCreated()
-      onClose()
+      await onCreated();
+      onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan.')
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
   }
 
@@ -313,7 +337,9 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-bold text-emerald-600">New Expense</p>
-            <h2 className="mt-1 text-2xl font-black text-slate-950">Tambah Pengeluaran</h2>
+            <h2 className="mt-1 text-2xl font-black text-slate-950">
+              Tambah Pengeluaran
+            </h2>
             <p className="mt-1 text-sm text-slate-500">
               Catat siapa yang bayar duluan dan siapa aja yang ikut patungan.
             </p>
@@ -337,10 +363,14 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-bold text-slate-700">Expense Name</span>
+              <span className="text-sm font-bold text-slate-700">
+                Expense Name
+              </span>
               <input
                 value={form.title}
-                onChange={(event) => setForm({ ...form, title: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, title: event.target.value })
+                }
                 placeholder="Contoh: Makan malam"
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
               />
@@ -350,7 +380,9 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
               <span className="text-sm font-bold text-slate-700">Amount</span>
               <input
                 value={form.amount}
-                onChange={(event) => setForm({ ...form, amount: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, amount: event.target.value })
+                }
                 type="number"
                 min="0"
                 placeholder="Contoh: 300000"
@@ -364,7 +396,9 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
               <span className="text-sm font-bold text-slate-700">Paid By</span>
               <select
                 value={form.paid_by_member_id}
-                onChange={(event) => setForm({ ...form, paid_by_member_id: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, paid_by_member_id: event.target.value })
+                }
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
               >
                 {members.map((member) => (
@@ -379,7 +413,9 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
               <span className="text-sm font-bold text-slate-700">Date</span>
               <input
                 value={form.expense_date}
-                onChange={(event) => setForm({ ...form, expense_date: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, expense_date: event.target.value })
+                }
                 type="date"
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
               />
@@ -390,7 +426,9 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
             <span className="text-sm font-bold text-slate-700">Notes</span>
             <textarea
               value={form.notes}
-              onChange={(event) => setForm({ ...form, notes: event.target.value })}
+              onChange={(event) =>
+                setForm({ ...form, notes: event.target.value })
+              }
               placeholder="Catatan tambahan, opsional"
               rows={3}
               className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
@@ -399,7 +437,9 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
 
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-bold text-slate-700">Participants</span>
+              <span className="text-sm font-bold text-slate-700">
+                Participants
+              </span>
               <span className="text-xs font-bold text-slate-400">
                 {form.participant_ids.length} selected
               </span>
@@ -407,7 +447,7 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
 
             <div className="grid gap-3 md:grid-cols-3">
               {members.map((member) => {
-                const active = form.participant_ids.includes(member.id)
+                const active = form.participant_ids.includes(member.id);
 
                 return (
                   <button
@@ -416,13 +456,13 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
                     onClick={() => toggleParticipant(member.id)}
                     className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${
                       active
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
                     }`}
                   >
                     {member.name}
                   </button>
-                )
+                );
               })}
             </div>
           </div>
@@ -441,110 +481,406 @@ function AddExpenseModal({ members, isOpen, onClose, onCreated }: AddExpenseModa
               disabled={submitting}
               className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? 'Saving...' : 'Save Expense'}
+              {submitting ? "Saving..." : "Save Expense"}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
+}
+
+type AddGroupModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreated: (groupID: number) => Promise<void>;
+};
+
+function AddGroupModal({ isOpen, onClose, onCreated }: AddGroupModalProps) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  if (!isOpen) return null;
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+
+    if (!name.trim()) {
+      setError("Group name wajib diisi.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const response = await fetch(`${API_URL}/groups`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || null,
+        }),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.message || "Gagal membuat group.");
+      }
+
+      setName("");
+      setDescription("");
+
+      await onCreated(json.data.id);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl shadow-slate-950/20">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold text-emerald-600">New Group</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-950">
+              Tambah Group
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Buat group baru untuk trip, kontrakan, event, atau patungan lain.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <label className="block">
+            <span className="text-sm font-bold text-slate-700">Group Name</span>
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Contoh: Trip Bali"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-bold text-slate-700">
+              Description
+            </span>
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Deskripsi group, opsional"
+              rows={3}
+              className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
+            />
+          </label>
+
+          <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? "Saving..." : "Save Group"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+type AddMemberModalProps = {
+  activeGroupID: number;
+  isOpen: boolean;
+  onClose: () => void;
+  onCreated: () => Promise<void>;
+};
+
+function AddMemberModal({
+  activeGroupID,
+  isOpen,
+  onClose,
+  onCreated,
+}: AddMemberModalProps) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  if (!isOpen) return null;
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+
+    if (!name.trim()) {
+      setError("Member name wajib diisi.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const response = await fetch(
+        `${API_URL}/groups/${activeGroupID}/members`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: name.trim(),
+            email: email.trim() || null,
+          }),
+        },
+      );
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.message || "Gagal menambah member.");
+      }
+
+      setName("");
+      setEmail("");
+
+      await onCreated();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl shadow-slate-950/20">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold text-emerald-600">New Member</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-950">
+              Tambah Member
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Tambahkan anggota ke group aktif agar bisa ikut split bill.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <label className="block">
+            <span className="text-sm font-bold text-slate-700">
+              Member Name
+            </span>
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Contoh: Raka"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-bold text-slate-700">Email</span>
+            <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              type="email"
+              placeholder="Opsional: raka@example.com"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
+            />
+          </label>
+
+          <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? "Saving..." : "Save Member"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 function App() {
-  const [group, setGroup] = useState<Group | null>(null)
-  const [members, setMembers] = useState<Member[]>([])
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [balanceData, setBalanceData] = useState<BalanceData | null>(null)
-  const [settlementHistory, setSettlementHistory] = useState<SettlementHistory[]>([])
-  const [loading, setLoading] = useState(true)
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
-  const [settlingKey, setSettlingKey] = useState('')
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [activeGroupID, setActiveGroupID] = useState<number>(GROUP_ID);
+  const [group, setGroup] = useState<Group | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [balanceData, setBalanceData] = useState<BalanceData | null>(null);
+  const [settlementHistory, setSettlementHistory] = useState<
+    SettlementHistory[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [settlingKey, setSettlingKey] = useState("");
 
   async function fetchData() {
     try {
-      setLoading(true)
+      setLoading(true);
 
-      const [groupRes, memberRes, expenseRes, balanceRes, settlementRes] = await Promise.all([
-        fetch(`${API_URL}/groups/${GROUP_ID}`),
-        fetch(`${API_URL}/groups/${GROUP_ID}/members`),
-        fetch(`${API_URL}/groups/${GROUP_ID}/expenses`),
-        fetch(`${API_URL}/groups/${GROUP_ID}/balances`),
-        fetch(`${API_URL}/groups/${GROUP_ID}/settlements`),
-      ])
+      const [
+        groupsRes,
+        groupRes,
+        memberRes,
+        expenseRes,
+        balanceRes,
+        settlementRes,
+      ] = await Promise.all([
+        fetch(`${API_URL}/groups`),
+        fetch(`${API_URL}/groups/${activeGroupID}`),
+        fetch(`${API_URL}/groups/${activeGroupID}/members`),
+        fetch(`${API_URL}/groups/${activeGroupID}/expenses`),
+        fetch(`${API_URL}/groups/${activeGroupID}/balances`),
+        fetch(`${API_URL}/groups/${activeGroupID}/settlements`),
+      ]);
 
-      const groupJson = await groupRes.json()
-      const memberJson = await memberRes.json()
-      const expenseJson = await expenseRes.json()
-      const balanceJson = await balanceRes.json()
-      const settlementJson = await settlementRes.json()
+      const groupsJson = await groupsRes.json();
+      const groupJson = await groupRes.json();
+      const memberJson = await memberRes.json();
+      const expenseJson = await expenseRes.json();
+      const balanceJson = await balanceRes.json();
+      const settlementJson = await settlementRes.json();
 
-      setGroup(groupJson.data)
-      setMembers(memberJson.data)
-      setExpenses(expenseJson.data)
-      setBalanceData(balanceJson.data)
-      setSettlementHistory(settlementJson.data)
+      setGroups(groupsJson.data);
+      setGroup(groupJson.data);
+      setMembers(memberJson.data);
+      setExpenses(expenseJson.data);
+      setBalanceData(balanceJson.data);
+      setSettlementHistory(settlementJson.data);
     } catch (error) {
-      console.error('Failed to fetch SplitNest data:', error)
+      console.error("Failed to fetch SplitNest data:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function markAsSettled(settlement: SettlementSuggestion) {
-    const key = `${settlement.from_member_id}-${settlement.to_member_id}-${settlement.amount}`
+    const key = `${settlement.from_member_id}-${settlement.to_member_id}-${settlement.amount}`;
 
     try {
-      setSettlingKey(key)
+      setSettlingKey(key);
 
-      const response = await fetch(`${API_URL}/groups/${GROUP_ID}/settlements`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${API_URL}/groups/${GROUP_ID}/settlements`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from_member_id: settlement.from_member_id,
+            to_member_id: settlement.to_member_id,
+            amount: settlement.amount,
+          }),
         },
-        body: JSON.stringify({
-          from_member_id: settlement.from_member_id,
-          to_member_id: settlement.to_member_id,
-          amount: settlement.amount,
-        }),
-      })
+      );
 
-      const json = await response.json()
+      const json = await response.json();
 
       if (!response.ok) {
-        throw new Error(json.message || 'Failed to mark settlement as settled.')
+        throw new Error(
+          json.message || "Failed to mark settlement as settled.",
+        );
       }
 
-      await fetchData()
+      await fetchData();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to mark settlement as settled.')
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to mark settlement as settled.",
+      );
     } finally {
-      setSettlingKey('')
+      setSettlingKey("");
     }
   }
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, [activeGroupID]);
 
   const totalExpense = useMemo(() => {
-    return expenses.reduce((total, expense) => total + expense.amount, 0)
-  }, [expenses])
+    return expenses.reduce((total, expense) => total + expense.amount, 0);
+  }, [expenses]);
 
   const totalOwed = useMemo(() => {
-    if (!balanceData) return 0
+    if (!balanceData) return 0;
     return balanceData.balances
       .filter((balance) => balance.balance > 0)
-      .reduce((total, balance) => total + balance.balance, 0)
-  }, [balanceData])
+      .reduce((total, balance) => total + balance.balance, 0);
+  }, [balanceData]);
 
   const totalDebt = useMemo(() => {
-    if (!balanceData) return 0
+    if (!balanceData) return 0;
     return Math.abs(
       balanceData.balances
         .filter((balance) => balance.balance < 0)
         .reduce((total, balance) => total + balance.balance, 0),
-    )
-  }, [balanceData])
+    );
+  }, [balanceData]);
 
   return (
     <div className="min-h-screen bg-[#f6f8fb]">
@@ -554,23 +890,57 @@ function App() {
         <section className="mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-8">
           <header className="mb-8 flex flex-col gap-5 rounded-[2rem] border border-white bg-white/70 p-5 shadow-sm shadow-slate-200/70 backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="mb-2 text-sm font-bold text-emerald-600">Shared Expense Manager</p>
+              <p className="mb-2 text-sm font-bold text-emerald-600">
+                Shared Expense Manager
+              </p>
               <h2 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                {group?.name ?? 'SplitNest Dashboard'}
+                {group?.name ?? "SplitNest Dashboard"}
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
                 {group?.description ??
-                  'Track shared bills, split costs fairly, and settle balances transparently.'}
+                  "Track shared bills, split costs fairly, and settle balances transparently."}
               </p>
             </div>
 
-            <button
-              onClick={() => setIsAddExpenseOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-slate-800"
-            >
-              <Plus size={18} />
-              Add Expense
-            </button>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <select
+                value={activeGroupID}
+                onChange={(event) =>
+                  setActiveGroupID(Number(event.target.value))
+                }
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-emerald-400"
+              >
+                {groups.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={() => setIsAddGroupOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                <Plus size={18} />
+                New Group
+              </button>
+
+              <button
+                onClick={() => setIsAddMemberOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                <Users size={18} />
+                Add Member
+              </button>
+
+              <button
+                onClick={() => setIsAddExpenseOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-slate-800"
+              >
+                <Plus size={18} />
+                Add Expense
+              </button>
+            </div>
           </header>
 
           {loading ? (
@@ -590,7 +960,7 @@ function App() {
                 <StatCard
                   title="Members"
                   value={String(members.length)}
-                  description={members.map((member) => member.name).join(', ')}
+                  description={members.map((member) => member.name).join(", ")}
                   icon={Users}
                   tone="purple"
                 />
@@ -614,8 +984,12 @@ function App() {
                 <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
                   <div className="mb-5 flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-black text-slate-950">Expenses</h3>
-                      <p className="text-sm text-slate-500">Daftar pengeluaran group</p>
+                      <h3 className="text-xl font-black text-slate-950">
+                        Expenses
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        Daftar pengeluaran group
+                      </p>
                     </div>
                     <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-600">
                       Equal Split
@@ -625,7 +999,9 @@ function App() {
                   <div className="space-y-4">
                     {expenses.length === 0 ? (
                       <div className="rounded-3xl border border-dashed border-slate-200 p-8 text-center">
-                        <p className="font-bold text-slate-700">Belum ada expense.</p>
+                        <p className="font-bold text-slate-700">
+                          Belum ada expense.
+                        </p>
                         <p className="mt-1 text-sm text-slate-500">
                           Klik Add Expense buat mulai catat patungan.
                         </p>
@@ -638,9 +1014,11 @@ function App() {
                         >
                           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                             <div>
-                              <h4 className="text-lg font-black text-slate-950">{expense.title}</h4>
+                              <h4 className="text-lg font-black text-slate-950">
+                                {expense.title}
+                              </h4>
                               <p className="mt-1 text-sm text-slate-500">
-                                Paid by{' '}
+                                Paid by{" "}
                                 <span className="font-bold text-slate-700">
                                   {expense.paid_by_name}
                                 </span>
@@ -675,7 +1053,9 @@ function App() {
                 <section className="space-y-6">
                   <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
                     <div className="mb-5">
-                      <h3 className="text-xl font-black text-slate-950">Balance & Settlement</h3>
+                      <h3 className="text-xl font-black text-slate-950">
+                        Balance & Settlement
+                      </h3>
                       <p className="text-sm text-slate-500">
                         Siapa yang harus bayar dan siapa yang menerima.
                       </p>
@@ -689,19 +1069,21 @@ function App() {
                         >
                           <div className="flex items-center justify-between gap-4">
                             <div>
-                              <p className="font-black text-slate-950">{balance.member_name}</p>
+                              <p className="font-black text-slate-950">
+                                {balance.member_name}
+                              </p>
                               <p className="text-sm text-slate-500">
-                                Paid {formatRupiah(balance.paid)} · Share{' '}
+                                Paid {formatRupiah(balance.paid)} · Share{" "}
                                 {formatRupiah(balance.share)}
                               </p>
                             </div>
                             <p
                               className={`text-right text-base font-black ${
                                 balance.balance > 0
-                                  ? 'text-emerald-600'
+                                  ? "text-emerald-600"
                                   : balance.balance < 0
-                                    ? 'text-rose-600'
-                                    : 'text-slate-500'
+                                    ? "text-rose-600"
+                                    : "text-slate-500"
                               }`}
                             >
                               {formatRupiah(balance.balance)}
@@ -712,24 +1094,34 @@ function App() {
                     </div>
 
                     <div className="rounded-3xl bg-slate-950 p-5 text-white">
-                      <p className="mb-4 text-sm font-bold text-slate-300">Settlement Suggestions</p>
+                      <p className="mb-4 text-sm font-bold text-slate-300">
+                        Settlement Suggestions
+                      </p>
 
                       <div className="space-y-3">
                         {balanceData?.settlements.length === 0 ? (
-                          <p className="text-sm text-slate-300">Semua balance sudah impas.</p>
+                          <p className="text-sm text-slate-300">
+                            Semua balance sudah impas.
+                          </p>
                         ) : (
                           balanceData?.settlements.map((settlement) => {
-                            const key = `${settlement.from_member_id}-${settlement.to_member_id}-${settlement.amount}`
-                            const isSettling = settlingKey === key
+                            const key = `${settlement.from_member_id}-${settlement.to_member_id}-${settlement.amount}`;
+                            const isSettling = settlingKey === key;
 
                             return (
-                              <div key={key} className="rounded-2xl bg-white/10 p-4">
+                              <div
+                                key={key}
+                                className="rounded-2xl bg-white/10 p-4"
+                              >
                                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                   <div>
                                     <p className="font-bold">
-                                      {settlement.from_member_name} → {settlement.to_member_name}
+                                      {settlement.from_member_name} →{" "}
+                                      {settlement.to_member_name}
                                     </p>
-                                    <p className="text-xs text-slate-300">Recommended settlement</p>
+                                    <p className="text-xs text-slate-300">
+                                      Recommended settlement
+                                    </p>
                                   </div>
 
                                   <div className="flex items-center gap-3">
@@ -743,12 +1135,14 @@ function App() {
                                       className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                       <CheckCircle2 size={15} />
-                                      {isSettling ? 'Saving...' : 'Mark as Settled'}
+                                      {isSettling
+                                        ? "Saving..."
+                                        : "Mark as Settled"}
                                     </button>
                                   </div>
                                 </div>
                               </div>
-                            )
+                            );
                           })
                         )}
                       </div>
@@ -757,14 +1151,20 @@ function App() {
 
                   <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
                     <div className="mb-4">
-                      <h3 className="text-xl font-black text-slate-950">Settlement History</h3>
-                      <p className="text-sm text-slate-500">Pembayaran yang sudah dicatat lunas.</p>
+                      <h3 className="text-xl font-black text-slate-950">
+                        Settlement History
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        Pembayaran yang sudah dicatat lunas.
+                      </p>
                     </div>
 
                     <div className="space-y-3">
                       {settlementHistory.length === 0 ? (
                         <div className="rounded-3xl border border-dashed border-slate-200 p-6 text-center">
-                          <p className="text-sm font-bold text-slate-500">Belum ada settlement.</p>
+                          <p className="text-sm font-bold text-slate-500">
+                            Belum ada settlement.
+                          </p>
                         </div>
                       ) : (
                         settlementHistory.map((settlement) => (
@@ -774,7 +1174,8 @@ function App() {
                           >
                             <div>
                               <p className="font-black text-slate-950">
-                                {settlement.from_member_name} → {settlement.to_member_name}
+                                {settlement.from_member_name} →{" "}
+                                {settlement.to_member_name}
                               </p>
                               <p className="text-xs font-semibold text-emerald-700">
                                 Status: {settlement.status}
@@ -796,13 +1197,29 @@ function App() {
       </main>
 
       <AddExpenseModal
+        activeGroupID={activeGroupID}
         members={members}
         isOpen={isAddExpenseOpen}
         onClose={() => setIsAddExpenseOpen(false)}
         onCreated={fetchData}
       />
+
+      <AddGroupModal
+        isOpen={isAddGroupOpen}
+        onClose={() => setIsAddGroupOpen(false)}
+        onCreated={async (groupID) => {
+          setActiveGroupID(groupID);
+        }}
+      />
+
+      <AddMemberModal
+        activeGroupID={activeGroupID}
+        isOpen={isAddMemberOpen}
+        onClose={() => setIsAddMemberOpen(false)}
+        onCreated={fetchData}
+      />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
