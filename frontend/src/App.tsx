@@ -163,6 +163,33 @@ function Sidebar() {
   );
 }
 
+function MobileTopbar() {
+  return (
+    <div className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur-xl lg:hidden">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-sky-500 text-sm font-black text-white shadow-lg shadow-emerald-500/20">
+            SN
+          </div>
+
+          <div>
+            <h1 className="text-lg font-black tracking-tight text-slate-950">
+              SplitNest
+            </h1>
+            <p className="text-xs font-semibold text-slate-500">
+              Expense manager
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-600">
+          MVP
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type StatCardProps = {
   title: string;
   value: string;
@@ -927,9 +954,10 @@ function App() {
   return (
     <div className="min-h-screen bg-[#f6f8fb]">
       <Sidebar />
+      <MobileTopbar />
 
       <main className="lg:ml-72">
-        <section className="mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-8">
+        <section className="mx-auto max-w-7xl px-4 py-5 md:px-8 md:py-8">
           <header className="mb-8 flex flex-col gap-5 rounded-[2rem] border border-white bg-white/70 p-5 shadow-sm shadow-slate-200/70 backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div>
               <p className="mb-2 text-sm font-bold text-emerald-600">
@@ -944,13 +972,13 @@ function App() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="grid gap-3 sm:grid-cols-2 xl:flex xl:items-center">
               <select
                 value={activeGroupID}
                 onChange={(event) =>
                   setActiveGroupID(Number(event.target.value))
                 }
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-emerald-400"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-emerald-400"
               >
                 {groups.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -961,7 +989,7 @@ function App() {
 
               <button
                 onClick={() => setIsAddGroupOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
               >
                 <Plus size={18} />
                 New Group
@@ -969,7 +997,7 @@ function App() {
 
               <button
                 onClick={() => setIsAddMemberOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
               >
                 <Users size={18} />
                 Add Member
@@ -984,7 +1012,7 @@ function App() {
 
                   setIsAddExpenseOpen(true);
                 }}
-                className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold shadow-lg transition ${
+                className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold shadow-lg transition ${
                   members.length === 0
                     ? "cursor-not-allowed bg-slate-300 text-slate-500 shadow-none"
                     : "bg-slate-950 text-white shadow-slate-900/10 hover:-translate-y-0.5 hover:bg-slate-800"
