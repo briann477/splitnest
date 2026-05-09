@@ -63,7 +63,9 @@ func (h *BalanceHandler) calculateMemberBalances(groupID int64) ([]models.Member
 			m.id,
 			m.name,
 			COALESCE(paid.total_paid, 0) AS paid,
-			COALESCE(share.total_share, 0) AS share
+			COALESCE(share.total_share, 0) AS share,
+			COALESCE(settlement_paid.total_settlement_paid, 0) AS settlement_paid,
+			COALESCE(settlement_received.total_settlement_received, 0) AS settlement_received
 		FROM members m
 		LEFT JOIN (
 			SELECT
@@ -82,9 +84,27 @@ func (h *BalanceHandler) calculateMemberBalances(groupID int64) ([]models.Member
 			WHERE e.group_id = ?
 			GROUP BY ep.member_id
 		) share ON share.member_id = m.id
+		LEFT JOIN (
+			SELECT
+				from_member_id,
+				SUM(amount) AS total_settlement_paid
+			FROM settlements
+			WHERE group_id = ?
+			AND status = 'settled'
+			GROUP BY from_member_id
+		) settlement_paid ON settlement_paid.from_member_id = m.id
+		LEFT JOIN (
+			SELECT
+				to_member_id,
+				SUM(amount) AS total_settlement_received
+			FROM settlements
+			WHERE group_id = ?
+			AND status = 'settled'
+			GROUP BY to_member_id
+		) settlement_received ON settlement_received.to_member_id = m.id
 		WHERE m.group_id = ?
 		ORDER BY m.id ASC
-	`, groupID, groupID, groupID)
+	`, groupID, groupID, groupID, groupID, groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -94,18 +114,22 @@ func (h *BalanceHandler) calculateMemberBalances(groupID int64) ([]models.Member
 
 	for rows.Next() {
 		var balance models.MemberBalance
+		var settlementPaid float64
+		var settlementReceived float64
 
 		err := rows.Scan(
 			&balance.MemberID,
 			&balance.MemberName,
 			&balance.Paid,
 			&balance.Share,
+			&settlementPaid,
+			&settlementReceived,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		balance.Balance = roundMoney(balance.Paid - balance.Share)
+		balance.Balance = roundMoney(balance.Paid - balance.Share + settlementPaid - settlementReceived)
 
 		balances = append(balances, balance)
 	}

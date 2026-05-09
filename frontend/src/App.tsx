@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   BarChart3,
+  CheckCircle2,
   CircleDollarSign,
   CreditCard,
-  Home,
   LayoutDashboard,
   Plus,
   ReceiptText,
@@ -58,7 +58,7 @@ type MemberBalance = {
   balance: number
 }
 
-type Settlement = {
+type SettlementSuggestion = {
   from_member_id: number
   from_member_name: string
   to_member_id: number
@@ -66,9 +66,22 @@ type Settlement = {
   amount: number
 }
 
+type SettlementHistory = {
+  id: number
+  group_id: number
+  from_member_id: number
+  from_member_name: string
+  to_member_id: number
+  to_member_name: string
+  amount: number
+  status: string
+  settled_at: string | null
+  created_at: string
+}
+
 type BalanceData = {
   balances: MemberBalance[]
-  settlements: Settlement[]
+  settlements: SettlementSuggestion[]
 }
 
 type AddExpenseForm = {
@@ -442,33 +455,70 @@ function App() {
   const [members, setMembers] = useState<Member[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [balanceData, setBalanceData] = useState<BalanceData | null>(null)
+  const [settlementHistory, setSettlementHistory] = useState<SettlementHistory[]>([])
   const [loading, setLoading] = useState(true)
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
+  const [settlingKey, setSettlingKey] = useState('')
 
   async function fetchData() {
     try {
       setLoading(true)
 
-      const [groupRes, memberRes, expenseRes, balanceRes] = await Promise.all([
+      const [groupRes, memberRes, expenseRes, balanceRes, settlementRes] = await Promise.all([
         fetch(`${API_URL}/groups/${GROUP_ID}`),
         fetch(`${API_URL}/groups/${GROUP_ID}/members`),
         fetch(`${API_URL}/groups/${GROUP_ID}/expenses`),
         fetch(`${API_URL}/groups/${GROUP_ID}/balances`),
+        fetch(`${API_URL}/groups/${GROUP_ID}/settlements`),
       ])
 
       const groupJson = await groupRes.json()
       const memberJson = await memberRes.json()
       const expenseJson = await expenseRes.json()
       const balanceJson = await balanceRes.json()
+      const settlementJson = await settlementRes.json()
 
       setGroup(groupJson.data)
       setMembers(memberJson.data)
       setExpenses(expenseJson.data)
       setBalanceData(balanceJson.data)
+      setSettlementHistory(settlementJson.data)
     } catch (error) {
       console.error('Failed to fetch SplitNest data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function markAsSettled(settlement: SettlementSuggestion) {
+    const key = `${settlement.from_member_id}-${settlement.to_member_id}-${settlement.amount}`
+
+    try {
+      setSettlingKey(key)
+
+      const response = await fetch(`${API_URL}/groups/${GROUP_ID}/settlements`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from_member_id: settlement.from_member_id,
+          to_member_id: settlement.to_member_id,
+          amount: settlement.amount,
+        }),
+      })
+
+      const json = await response.json()
+
+      if (!response.ok) {
+        throw new Error(json.message || 'Failed to mark settlement as settled.')
+      }
+
+      await fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to mark settlement as settled.')
+    } finally {
+      setSettlingKey('')
     }
   }
 
@@ -622,67 +672,117 @@ function App() {
                   </div>
                 </section>
 
-                <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
-                  <div className="mb-5">
-                    <h3 className="text-xl font-black text-slate-950">Balance & Settlement</h3>
-                    <p className="text-sm text-slate-500">
-                      Siapa yang harus bayar dan siapa yang menerima.
-                    </p>
-                  </div>
+                <section className="space-y-6">
+                  <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
+                    <div className="mb-5">
+                      <h3 className="text-xl font-black text-slate-950">Balance & Settlement</h3>
+                      <p className="text-sm text-slate-500">
+                        Siapa yang harus bayar dan siapa yang menerima.
+                      </p>
+                    </div>
 
-                  <div className="mb-5 space-y-3">
-                    {balanceData?.balances.map((balance) => (
-                      <div
-                        key={balance.member_id}
-                        className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4"
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <p className="font-black text-slate-950">{balance.member_name}</p>
-                            <p className="text-sm text-slate-500">
-                              Paid {formatRupiah(balance.paid)} · Share{' '}
-                              {formatRupiah(balance.share)}
-                            </p>
-                          </div>
-                          <p
-                            className={`text-right text-base font-black ${
-                              balance.balance > 0
-                                ? 'text-emerald-600'
-                                : balance.balance < 0
-                                  ? 'text-rose-600'
-                                  : 'text-slate-500'
-                            }`}
-                          >
-                            {formatRupiah(balance.balance)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="rounded-3xl bg-slate-950 p-5 text-white">
-                    <p className="mb-4 text-sm font-bold text-slate-300">Settlement Suggestions</p>
-
-                    <div className="space-y-3">
-                      {balanceData?.settlements.length === 0 ? (
-                        <p className="text-sm text-slate-300">Semua balance sudah impas.</p>
-                      ) : (
-                        balanceData?.settlements.map((settlement) => (
-                          <div
-                            key={`${settlement.from_member_id}-${settlement.to_member_id}-${settlement.amount}`}
-                            className="rounded-2xl bg-white/10 p-4"
-                          >
-                            <div className="flex items-center justify-between gap-4">
-                              <div>
-                                <p className="font-bold">
-                                  {settlement.from_member_name} → {settlement.to_member_name}
-                                </p>
-                                <p className="text-xs text-slate-300">Recommended settlement</p>
-                              </div>
-                              <p className="font-black text-emerald-300">
-                                {formatRupiah(settlement.amount)}
+                    <div className="mb-5 space-y-3">
+                      {balanceData?.balances.map((balance) => (
+                        <div
+                          key={balance.member_id}
+                          className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4"
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="font-black text-slate-950">{balance.member_name}</p>
+                              <p className="text-sm text-slate-500">
+                                Paid {formatRupiah(balance.paid)} · Share{' '}
+                                {formatRupiah(balance.share)}
                               </p>
                             </div>
+                            <p
+                              className={`text-right text-base font-black ${
+                                balance.balance > 0
+                                  ? 'text-emerald-600'
+                                  : balance.balance < 0
+                                    ? 'text-rose-600'
+                                    : 'text-slate-500'
+                              }`}
+                            >
+                              {formatRupiah(balance.balance)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="rounded-3xl bg-slate-950 p-5 text-white">
+                      <p className="mb-4 text-sm font-bold text-slate-300">Settlement Suggestions</p>
+
+                      <div className="space-y-3">
+                        {balanceData?.settlements.length === 0 ? (
+                          <p className="text-sm text-slate-300">Semua balance sudah impas.</p>
+                        ) : (
+                          balanceData?.settlements.map((settlement) => {
+                            const key = `${settlement.from_member_id}-${settlement.to_member_id}-${settlement.amount}`
+                            const isSettling = settlingKey === key
+
+                            return (
+                              <div key={key} className="rounded-2xl bg-white/10 p-4">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                  <div>
+                                    <p className="font-bold">
+                                      {settlement.from_member_name} → {settlement.to_member_name}
+                                    </p>
+                                    <p className="text-xs text-slate-300">Recommended settlement</p>
+                                  </div>
+
+                                  <div className="flex items-center gap-3">
+                                    <p className="font-black text-emerald-300">
+                                      {formatRupiah(settlement.amount)}
+                                    </p>
+
+                                    <button
+                                      onClick={() => markAsSettled(settlement)}
+                                      disabled={isSettling}
+                                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      <CheckCircle2 size={15} />
+                                      {isSettling ? 'Saving...' : 'Mark as Settled'}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
+                    <div className="mb-4">
+                      <h3 className="text-xl font-black text-slate-950">Settlement History</h3>
+                      <p className="text-sm text-slate-500">Pembayaran yang sudah dicatat lunas.</p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {settlementHistory.length === 0 ? (
+                        <div className="rounded-3xl border border-dashed border-slate-200 p-6 text-center">
+                          <p className="text-sm font-bold text-slate-500">Belum ada settlement.</p>
+                        </div>
+                      ) : (
+                        settlementHistory.map((settlement) => (
+                          <div
+                            key={settlement.id}
+                            className="flex items-center justify-between gap-4 rounded-3xl border border-emerald-100 bg-emerald-50 p-4"
+                          >
+                            <div>
+                              <p className="font-black text-slate-950">
+                                {settlement.from_member_name} → {settlement.to_member_name}
+                              </p>
+                              <p className="text-xs font-semibold text-emerald-700">
+                                Status: {settlement.status}
+                              </p>
+                            </div>
+                            <p className="font-black text-emerald-700">
+                              {formatRupiah(settlement.amount)}
+                            </p>
                           </div>
                         ))
                       )}

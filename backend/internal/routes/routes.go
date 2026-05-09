@@ -30,6 +30,7 @@ func SetupRoutes(db *sql.DB) http.Handler {
 	memberHandler := handlers.NewMemberHandler(db)
 	expenseHandler := handlers.NewExpenseHandler(db)
 	balanceHandler := handlers.NewBalanceHandler(db)
+	settlementHandler := handlers.NewSettlementHandler(db)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, Response{
@@ -79,6 +80,11 @@ func SetupRoutes(db *sql.DB) http.Handler {
 	})
 
 	r.Get("/api/groups/{groupID}/balances", balanceHandler.GetBalancesByGroupID)
+
+	r.Route("/api/groups/{groupID}/settlements", func(r chi.Router) {
+		r.Get("/", settlementHandler.GetSettlementsByGroupID)
+		r.Post("/", settlementHandler.CreateSettlement)
+	})
 
 	return r
 }
