@@ -933,6 +933,46 @@ function App() {
     }
   }
 
+  async function deleteGroup() {
+    if (!group) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${group.name}"? This will delete all members, expenses, and settlements in this group.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_URL}/groups/${group.id}`, {
+        method: "DELETE",
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.message || "Failed to delete group.");
+      }
+
+      const groupsResponse = await fetch(`${API_URL}/groups`);
+      const groupsJson = await groupsResponse.json();
+      const remainingGroups = groupsJson.data as Group[];
+
+      setGroups(remainingGroups);
+
+      if (remainingGroups.length > 0) {
+        setActiveGroupID(remainingGroups[0].id);
+      } else {
+        setGroup(null);
+        setMembers([]);
+        setExpenses([]);
+        setBalanceData(null);
+        setSettlementHistory([]);
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to delete group.");
+    }
+  }
+
   async function deleteMember(memberID: number) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this member?",
@@ -1120,6 +1160,15 @@ function App() {
               >
                 <Pencil size={18} />
                 Edit Group
+              </button>
+
+              <button
+                onClick={deleteGroup}
+                disabled={!group}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-bold text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Trash2 size={18} />
+                Delete Group
               </button>
 
               <button
