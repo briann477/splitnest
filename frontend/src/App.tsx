@@ -777,6 +777,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [settlingKey, setSettlingKey] = useState("");
+  const [expenseSearch, setExpenseSearch] = useState("");
 
   async function fetchData() {
     try {
@@ -888,6 +889,20 @@ function App() {
   useEffect(() => {
     fetchData();
   }, [activeGroupID]);
+
+  const filteredExpenses = useMemo(() => {
+    const keyword = expenseSearch.toLowerCase().trim();
+
+    if (!keyword) return expenses;
+
+    return expenses.filter((expense) => {
+      const titleMatch = expense.title.toLowerCase().includes(keyword);
+      const payerMatch = expense.paid_by_name.toLowerCase().includes(keyword);
+      const noteMatch = expense.notes?.toLowerCase().includes(keyword) ?? false;
+
+      return titleMatch || payerMatch || noteMatch;
+    });
+  }, [expenses, expenseSearch]);
 
   const totalExpense = useMemo(() => {
     return expenses.reduce((total, expense) => total + expense.amount, 0);
@@ -1051,7 +1066,7 @@ function App() {
 
               <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                 <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
-                  <div className="mb-5 flex items-center justify-between">
+                  <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                       <h3 className="text-xl font-black text-slate-950">
                         Expenses
@@ -1060,13 +1075,25 @@ function App() {
                         Daftar pengeluaran group
                       </p>
                     </div>
-                    <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-600">
-                      Equal Split
-                    </span>
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <input
+                        value={expenseSearch}
+                        onChange={(event) =>
+                          setExpenseSearch(event.target.value)
+                        }
+                        placeholder="Search expense..."
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white sm:w-56"
+                      />
+
+                      <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-600">
+                        Equal Split
+                      </span>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
-                    {expenses.length === 0 ? (
+                    {filteredExpenses.length === 0 ? (
                       <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center">
                         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-3xl bg-sky-50 text-sky-600">
                           <ReceiptText size={24} />
@@ -1099,7 +1126,7 @@ function App() {
                         </button>
                       </div>
                     ) : (
-                      expenses.map((expense) => (
+                      filteredExpenses.map((expense) => (
                         <article
                           key={expense.id}
                           className="rounded-3xl border border-slate-100 bg-slate-50/70 p-5"
