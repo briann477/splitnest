@@ -375,3 +375,36 @@ func containsID(ids []int64, target int64) bool {
 
 	return false
 }
+
+func (h *ExpenseHandler) DeleteExpense(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid expense ID")
+		return
+	}
+
+	result, err := h.DB.Exec(`
+		DELETE FROM expenses
+		WHERE id = ?
+	`, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to delete expense")
+		return
+	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to check deleted expense")
+		return
+	}
+
+	if affectedRows == 0 {
+		writeError(w, http.StatusNotFound, "Expense not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":  "success",
+		"message": "Expense deleted successfully",
+	})
+}

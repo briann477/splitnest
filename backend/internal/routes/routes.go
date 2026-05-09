@@ -79,6 +79,8 @@ func SetupRoutes(db *sql.DB) http.Handler {
 		r.Post("/", expenseHandler.CreateExpense)
 	})
 
+	r.Delete("/api/expenses/{id}", expenseHandler.DeleteExpense)
+
 	r.Get("/api/groups/{groupID}/balances", balanceHandler.GetBalancesByGroupID)
 
 	r.Route("/api/groups/{groupID}/settlements", func(r chi.Router) {

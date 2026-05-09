@@ -9,6 +9,7 @@ import {
   ReceiptText,
   Scale,
   Settings,
+  Trash2,
   Users,
   Wallet,
   X,
@@ -817,6 +818,32 @@ function App() {
     }
   }
 
+  async function deleteExpense(expenseID: number) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this expense?",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_URL}/expenses/${expenseID}`, {
+        method: "DELETE",
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.message || "Failed to delete expense.");
+      }
+
+      await fetchData();
+    } catch (error) {
+      alert(
+        error instanceof Error ? error.message : "Failed to delete expense.",
+      );
+    }
+  }
+
   async function markAsSettled(settlement: SettlementSuggestion) {
     const key = `${settlement.from_member_id}-${settlement.to_member_id}-${settlement.amount}`;
 
@@ -824,7 +851,7 @@ function App() {
       setSettlingKey(key);
 
       const response = await fetch(
-        `${API_URL}/groups/${GROUP_ID}/settlements`,
+        `${API_URL}/groups/${activeGroupID}/settlements`,
         {
           method: "POST",
           headers: {
@@ -1024,9 +1051,19 @@ function App() {
                                 </span>
                               </p>
                             </div>
-                            <p className="text-xl font-black text-slate-950">
-                              {formatRupiah(expense.amount)}
-                            </p>
+                            <div className="flex items-center gap-3">
+                              <p className="text-xl font-black text-slate-950">
+                                {formatRupiah(expense.amount)}
+                              </p>
+
+                              <button
+                                onClick={() => deleteExpense(expense.id)}
+                                className="rounded-xl bg-rose-50 p-2 text-rose-500 transition hover:bg-rose-100"
+                                title="Delete expense"
+                              >
+                                <Trash2 size={17} />
+                              </button>
+                            </div>
                           </div>
 
                           <div className="mt-5 grid gap-3 md:grid-cols-3">
