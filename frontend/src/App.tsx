@@ -1016,7 +1016,7 @@ function App() {
     if (!group) return;
 
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${group.name}"? This will delete all members, expenses, and settlements in this group.`,
+      `Are you sure you want to delete "${group.name}"?\n\nThis action is only recommended for empty groups.`,
     );
 
     if (!confirmed) return;
@@ -1029,9 +1029,10 @@ function App() {
       const json = await response.json();
 
       if (!response.ok) {
-        throw new Error(json.message || "Failed to delete group.");
+        throw new Error(
+          "Cannot delete this group because it already has members, expenses, or settlements.",
+        );
       }
-
       const groupsResponse = await fetch(`${API_URL}/groups`);
       const groupsJson = await groupsResponse.json();
       const remainingGroups = groupsJson.data as Group[];
@@ -1068,8 +1069,7 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-          json.message ||
-            "Failed to delete member. This member may already be used in expenses or settlements.",
+          "Cannot delete this member because they may already be used in expenses, balances, or settlements.",
         );
       }
 
