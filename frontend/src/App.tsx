@@ -40,6 +40,7 @@ type Member = {
   group_id: number;
   name: string;
   email: string | null;
+  is_active: boolean;
 };
 
 type ExpenseParticipant = {
@@ -300,6 +301,12 @@ function AddExpenseModal({
   onClose,
   onCreated,
 }: AddExpenseModalProps) {
+  const selectableMembers = useMemo(() => {
+    return editingExpense
+      ? members
+      : members.filter((member) => member.is_active);
+  }, [members, editingExpense]);
+
   const [form, setForm] = useState<AddExpenseForm>({
     title: "",
     category: "Other",
@@ -332,17 +339,18 @@ function AddExpenseModal({
       return;
     }
 
-    if (members.length > 0) {
+    if (selectableMembers.length > 0) {
       setForm((current) => ({
         ...current,
-        paid_by_member_id: current.paid_by_member_id || String(members[0].id),
+        paid_by_member_id:
+          current.paid_by_member_id || String(selectableMembers[0].id),
         participant_ids:
           current.participant_ids.length > 0
             ? current.participant_ids
-            : members.map((m) => m.id),
+            : selectableMembers.map((member) => member.id),
       }));
     }
-  }, [isOpen, members, editingExpense]);
+  }, [isOpen, editingExpense, selectableMembers]);
 
   if (!isOpen) return null;
 
@@ -532,7 +540,7 @@ function AddExpenseModal({
                 }
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none transition focus:border-emerald-400 focus:bg-white"
               >
-                {members.map((member) => (
+                {selectableMembers.map((member) => (
                   <option key={member.id} value={member.id}>
                     {member.name}
                   </option>
@@ -577,7 +585,7 @@ function AddExpenseModal({
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
-              {members.map((member) => {
+              {selectableMembers.map((member) => {
                 const active = form.participant_ids.includes(member.id);
 
                 return (
@@ -1053,6 +1061,34 @@ function App() {
     }
   }
 
+  async function toggleMemberStatus(member: Member) {
+    try {
+      const response = await fetch(`${API_URL}/members/${member.id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          is_active: !member.is_active,
+        }),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.message || "Failed to update member status.");
+      }
+
+      await fetchData();
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to update member status.",
+      );
+    }
+  }
+
   async function deleteMember(memberID: number) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this member?",
@@ -1151,6 +1187,10 @@ function App() {
   useEffect(() => {
     fetchData();
   }, [activeGroupID]);
+
+  const activeMembers = useMemo(() => {
+    return members.filter((member) => member.is_active);
+  }, [members]);
 
   const filteredExpenses = useMemo(() => {
     const keyword = expenseSearch.toLowerCase().trim();
@@ -1279,7 +1319,7 @@ function App() {
 
               <button
                 onClick={() => {
-                  if (members.length === 0) {
+                  if (activeMembers.length === 0) {
                     alert("Tambahkan member dulu sebelum membuat expense.");
                     return;
                   }
@@ -1313,12 +1353,12 @@ function App() {
                   tone="blue"
                 />
                 <StatCard
-                  title="Members"
-                  value={String(members.length)}
+                  title="Active Members"
+                  value={String(activeMembers.length)}
                   description={
-                    members.length > 0
-                      ? members.map((member) => member.name).join(", ")
-                      : "No members yet"
+                    activeMembers.length > 0
+                      ? activeMembers.map((member) => member.name).join(", ")
+                      : "No active members"
                   }
                   icon={Users}
                   tone="purple"
@@ -1404,10 +1444,23 @@ function App() {
                         className="flex items-center justify-between gap-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4"
                       >
                         <div>
-                          <p className="font-black text-slate-950">
-                            {member.name}
-                          </p>
-                          <p className="text-sm font-semibold text-slate-500">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-black text-slate-950">
+                              {member.name}
+                            </p>
+
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-black ${
+                                member.is_active
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : "bg-slate-200 text-slate-600"
+                              }`}
+                            >
+                              {member.is_active ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+
+                          <p className="mt-1 text-sm font-semibold text-slate-500">
                             {member.email ?? "No email"}
                           </p>
                         </div>
@@ -1419,6 +1472,22 @@ function App() {
                             title="Edit member"
                           >
                             <Pencil size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => toggleMemberStatus(member)}
+                            className={`rounded-xl px-3 py-2 text-xs font-black transition ${
+                              member.is_active
+                                ? "bg-amber-50 text-amber-600 hover:bg-amber-100"
+                                : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                            }`}
+                            title={
+                              member.is_active
+                                ? "Deactivate member"
+                                : "Reactivate member"
+                            }
+                          >
+                            {member.is_active ? "Deactivate" : "Reactivate"}
                           </button>
 
                           <button
@@ -1484,7 +1553,7 @@ function App() {
 
                         <button
                           onClick={() => {
-                            if (members.length === 0) {
+                            if (activeMembers.length === 0) {
                               alert(
                                 "Tambahkan member dulu sebelum membuat expense.",
                               );

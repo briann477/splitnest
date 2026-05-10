@@ -28,7 +28,7 @@ func (h *MemberHandler) GetMembersByGroupID(w http.ResponseWriter, r *http.Reque
 	}
 
 	rows, err := h.DB.Query(`
-		SELECT id, group_id, name, email, created_at
+		SELECT id, group_id, name, email, is_active, created_at
 		FROM members
 		WHERE group_id = ?
 		ORDER BY id DESC
@@ -49,6 +49,7 @@ func (h *MemberHandler) GetMembersByGroupID(w http.ResponseWriter, r *http.Reque
 			&member.GroupID,
 			&member.Name,
 			&member.Email,
+			&member.IsActive,
 			&member.CreatedAt,
 		)
 		if err != nil {
@@ -116,7 +117,7 @@ func (h *MemberHandler) CreateMember(w http.ResponseWriter, r *http.Request) {
 	var member models.Member
 
 	err = h.DB.QueryRow(`
-		SELECT id, group_id, name, email, created_at
+		SELECT id, group_id, name, email, is_active, created_at
 		FROM members
 		WHERE id = ?
 	`, id).Scan(
@@ -124,6 +125,7 @@ func (h *MemberHandler) CreateMember(w http.ResponseWriter, r *http.Request) {
 		&member.GroupID,
 		&member.Name,
 		&member.Email,
+		&member.IsActive,
 		&member.CreatedAt,
 	)
 	if err != nil {
@@ -240,6 +242,48 @@ func (h *MemberHandler) UpdateMember(w http.ResponseWriter, r *http.Request) {
 		"status":  "success",
 		"message": "Member updated successfully",
 		"data":    member,
+	})
+}
+
+func (h *MemberHandler) UpdateMemberStatus(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid member ID")
+		return
+	}
+
+	var request models.UpdateMemberStatusRequest
+
+	err = json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	result, err := h.DB.Exec(`
+		UPDATE members
+		SET is_active = ?
+		WHERE id = ?
+	`, request.IsActive, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to update member status")
+		return
+	}
+
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to check updated member")
+		return
+	}
+
+	if affectedRows == 0 {
+		writeError(w, http.StatusNotFound, "Member not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":  "success",
+		"message": "Member status updated successfully",
 	})
 }
 

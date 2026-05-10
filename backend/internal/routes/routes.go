@@ -71,6 +71,7 @@ func SetupRoutes(db *sql.DB) http.Handler {
 	r.Route("/api/members", func(r chi.Router) {
 		r.Get("/{id}", memberHandler.GetMemberByID)
 		r.Put("/{id}", memberHandler.UpdateMember)
+		r.Put("/{id}/status", memberHandler.UpdateMemberStatus)
 		r.Delete("/{id}", memberHandler.DeleteMember)
 	})
 
